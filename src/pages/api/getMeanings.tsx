@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { text, wordSize } = req.body;
     const words = text.match(new RegExp(`\\b\\w{${wordSize},}\\b`, 'g')) || []; // Filter words based on wordSize
     const meanings = await Promise.all(
-      words.map(async (word) => ({
+      words.map(async (word: string) => ({
         word,
         meaning: await fetchDefinition(word),
       }))
