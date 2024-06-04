@@ -3,6 +3,11 @@
 
 import { useState } from 'react';
 
+interface Meaning {
+  word: string;
+  meaning: string;
+}
+
 function generateRandomText() {
   const nouns = [
     "apple", "banana", "cherry", "date", "elderberry", "fig", "grape", "honeydew",
@@ -70,7 +75,7 @@ console.log(generateRandomText());
 export default function Home() {
   const [text, setText] = useState('');
   const [wordSize, setWordSize] = useState(7); // Default word size
-  const [meanings, setMeanings] = useState([]);
+  const [meanings, setMeanings] = useState<Meaning[]>([]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
