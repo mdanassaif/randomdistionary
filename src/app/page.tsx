@@ -1,113 +1,156 @@
-import Image from "next/image";
+'use client';
+
+
+import { useState } from 'react';
+
+function generateRandomText() {
+  const nouns = [
+    "apple", "banana", "cherry", "date", "elderberry", "fig", "grape", "honeydew",
+    "student", "university", "assignment", "learning", "education", "scholarship",
+    "knowledge", "academics", "book", "library", "study", "examination"
+  ];
+
+  const adjectives = [
+    "delicious", "ripe", "sweet", "juicy", "tasty", "fresh", "sour", "nutritious",
+    "bright", "intelligent", "curious", "clever", "creative", "innovative", "ambitious"
+  ];
+
+  const verbs = [
+    "enjoys", "devours", "consumes", "learns", "studies", "explores", "discovers",
+    "reads", "comprehends", "absorbs", "analyzes", "experiments", "achieves", "succeeds"
+  ];
+
+  const adverbs = [
+    "quickly", "eagerly", "enthusiastically", "intently", "passionately", "thoroughly",
+    "creatively", "thoughtfully", "diligently", "persistently", "successfully", "brilliantly"
+  ];
+
+  const determiners = ["The", "A"];
+  const connectors = ["and", "but", "or", "so"];
+
+  const sentenceLength = Math.floor(Math.random() * 8) + 10; // Sentences of length 10-17 words
+  let sentence = [];
+
+  for (let i = 0; i < sentenceLength; i++) {
+    let word;
+    if (i === 0) {
+      word = determiners[Math.floor(Math.random() * determiners.length)];
+    } else if (i === sentenceLength - 1) {
+      word = ".";
+    } else {
+      switch (i % 4) {
+        case 0:
+          word = adjectives[Math.floor(Math.random() * adjectives.length)];
+          break;
+        case 1:
+          word = nouns[Math.floor(Math.random() * nouns.length)];
+          break;
+        case 2:
+          word = verbs[Math.floor(Math.random() * verbs.length)];
+          break;
+        case 3:
+          word = adverbs[Math.floor(Math.random() * adverbs.length)];
+          break;
+        default:
+          break;
+      }
+      if (i > 1 && Math.random() > 0.7) {
+        word = connectors[Math.floor(Math.random() * connectors.length)];
+      }
+    }
+    sentence.push(word);
+  }
+
+  return sentence.join(' ');
+}
+
+console.log(generateRandomText());
+
 
 export default function Home() {
+  const [text, setText] = useState('');
+  const [wordSize, setWordSize] = useState(7); // Default word size
+  const [meanings, setMeanings] = useState([]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const response = await fetch('/api/getMeanings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text, wordSize }), // Include wordSize in the request body
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      setMeanings(data.meanings);
+    } else {
+      console.error('Error fetching meanings');
+    }
+  };
+
+  const handleGenerateText = () => {
+    setText(generateRandomText());
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="flex h-[60vh]  items-center justify-center">
+    <div className="w-full max-w-3xl bg-white shadow-lg rounded-lg p-8">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <textarea
+          className="w-full p-4 border border-gray-300 rounded-lg resize-none"
+          rows="4"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Enter your text here..."
+        ></textarea>
+        <div className="flex items-center justify-between">
+          <label htmlFor="wordSize" className="text-gray-700">
+            Word Size:
+          </label>
+          <select
+            id="wordSize"
+            value={wordSize}
+            onChange={(e) => setWordSize(parseInt(e.target.value))}
+            className="border border-gray-300 rounded-lg p-2"
           >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+            {[3, 4, 5, 6, 7, 8, 9].map((size) => (
+              <option key={size} value={size}>
+                {size} letters or longer
+              </option>
+            ))}
+          </select>
         </div>
-      </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+        <div className="flex items-center justify-center space-x-4">
+          <button
+            type="submit"
+            className="bg-[#6f1940] text-white px-6 py-3 rounded-lg hover:bg-[#db7f9d] transition-colors"
+          >
+            Get Meanings
+          </button>
+          <button
+            type="button"
+            onClick={handleGenerateText}
+            className="bg-[#007a6a] text-white px-6 py-3 rounded-lg hover:bg-[#009d88] transition-colors"
+          >
+            Generate Random Sentence
+          </button>
+        </div>
+      </form>
+      {meanings.length > 0 && (
+        <div className="mt-8">
+          <ul className="space-y-2">
+            {meanings.map((item, index) => (
+              <li key={index} className="text-gray-800">
+                <strong className='uppercase text-[#5f2134]'>{item.word} :</strong> {item.meaning}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  </main>
+  
   );
 }
