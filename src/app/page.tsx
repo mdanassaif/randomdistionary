@@ -72,7 +72,7 @@ export default function Home() {
   const [wordSize, setWordSize] = useState(7); // Default word size
   const [meanings, setMeanings] = useState([]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const response = await fetch('/api/getMeanings', {
       method: 'POST',
@@ -100,7 +100,7 @@ export default function Home() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <textarea
           className="w-full p-4 border border-gray-300 rounded-lg resize-none"
-          rows="4"
+          rows={parseInt("4")}
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Enter your text here..."
