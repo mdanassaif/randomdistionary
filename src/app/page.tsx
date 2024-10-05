@@ -1,161 +1,99 @@
-'use client';
+'use client'
 
+import React, { useState, useCallback } from 'react';
+import { Book, Search } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Textarea } from "@/components/ui/textarea"
+import { Slider } from '@/components/ui/slider';
 
-import { useState } from 'react';
-
-interface Meaning {
-  word: string;
-  meaning: string;
-}
-
-function generateRandomText() {
-  const nouns = [
-    "apple", "banana", "cherry", "date", "elderberry", "fig", "grape", "honeydew",
-    "student", "university", "assignment", "learning", "education", "scholarship",
-    "knowledge", "academics", "book", "library", "study", "examination"
-  ];
-
-  const adjectives = [
-    "delicious", "ripe", "sweet", "juicy", "tasty", "fresh", "sour", "nutritious",
-    "bright", "intelligent", "curious", "clever", "creative", "innovative", "ambitious"
-  ];
-
-  const verbs = [
-    "enjoys", "devours", "consumes", "learns", "studies", "explores", "discovers",
-    "reads", "comprehends", "absorbs", "analyzes", "experiments", "achieves", "succeeds"
-  ];
-
-  const adverbs = [
-    "quickly", "eagerly", "enthusiastically", "intently", "passionately", "thoroughly",
-    "creatively", "thoughtfully", "diligently", "persistently", "successfully", "brilliantly"
-  ];
-
-  const determiners = ["The", "A"];
-  const connectors = ["and", "but", "or", "so"];
-
-  const sentenceLength = Math.floor(Math.random() * 8) + 10; // Sentences of length 10-17 words
-  let sentence = [];
-
-  for (let i = 0; i < sentenceLength; i++) {
-    let word;
-    if (i === 0) {
-      word = determiners[Math.floor(Math.random() * determiners.length)];
-    } else if (i === sentenceLength - 1) {
-      word = ".";
-    } else {
-      switch (i % 4) {
-        case 0:
-          word = adjectives[Math.floor(Math.random() * adjectives.length)];
-          break;
-        case 1:
-          word = nouns[Math.floor(Math.random() * nouns.length)];
-          break;
-        case 2:
-          word = verbs[Math.floor(Math.random() * verbs.length)];
-          break;
-        case 3:
-          word = adverbs[Math.floor(Math.random() * adverbs.length)];
-          break;
-        default:
-          break;
-      }
-      if (i > 1 && Math.random() > 0.7) {
-        word = connectors[Math.floor(Math.random() * connectors.length)];
-      }
-    }
-    sentence.push(word);
+const AdvancedDictionary = () => {
+  const [text, setText] = useState('');
+  const [wordSize, setWordSize] = useState(5);
+  interface Meaning {
+    word: string;
+    meaning: string;
   }
 
-  return sentence.join(' ');
-}
-
-console.log(generateRandomText());
-
-
-export default function Home() {
-  const [text, setText] = useState('');
-  const [wordSize, setWordSize] = useState(7); // Default word size
   const [meanings, setMeanings] = useState<Meaning[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const response = await fetch('/api/getMeanings', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ text, wordSize }), // Include wordSize in the request body
-    });
+  const handleSubmit = useCallback(async (e: { preventDefault: () => void; }) => {
+    e?.preventDefault();
+    if (!text.trim()) return;
 
-    if (response.ok) {
+    setIsLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/getMeanings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, wordSize }),
+      });
+      if (!response.ok) throw new Error('Failed to fetch meanings');
       const data = await response.json();
       setMeanings(data.meanings);
-    } else {
-      console.error('Error fetching meanings');
+    } catch (err) {
+      setError('An error occurred while fetching meanings.');
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const handleGenerateText = () => {
-    setText(generateRandomText());
-  };
+  }, [text, wordSize]);
 
   return (
-    <main className="flex h-[60vh]  items-center justify-center">
-    <div className="w-full max-w-3xl bg-white shadow-lg rounded-lg p-8">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <textarea
-          className="w-full p-4 border border-gray-300 rounded-lg resize-none"
-          rows={parseInt("4")}
+    <div className="max-w-3xl mx-auto bg-white rounded-lg p-8">
+       
+      <form onSubmit={handleSubmit} className="space-y-6 ">
+        <Textarea
+          className="w-full border border-red-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-red-300 h-[15rem]"
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Enter your text here..."
-        ></textarea>
-        <div className="flex items-center justify-between">
-          <label htmlFor="wordSize" className="text-gray-700">
-            Word Size:
+        />
+        <div className="space-y-2">
+          <label htmlFor="wordSize" className="block text-sm font-medium text-red-700">
+            Word Size: {wordSize} letters or longer
           </label>
-          <select
+          <Slider
             id="wordSize"
-            value={wordSize}
-            onChange={(e) => setWordSize(parseInt(e.target.value))}
-            className="border border-gray-300 rounded-lg p-2"
-          >
-            {[3, 4, 5, 6, 7, 8, 9].map((size) => (
-              <option key={size} value={size}>
-                {size} letters or longer
-              </option>
-            ))}
-          </select>
+            min={3}
+            max={15}
+            step={1}
+            value={[wordSize]}
+            onValueChange={(value) => setWordSize(value[0])}
+            className="w-full"
+          />
         </div>
-        <div className="flex items-center justify-center space-x-4">
-          <button
-            type="submit"
-            className="bg-[#6f1940] text-white px-6 py-3 rounded-lg hover:bg-[#db7f9d] transition-colors"
-          >
-            Get Meanings
-          </button>
-          <button
-            type="button"
-            onClick={handleGenerateText}
-            className="bg-[#007a6a] text-white px-6 py-3 rounded-lg hover:bg-[#009d88] transition-colors"
-          >
-            Generate Random Sentence
-          </button>
-        </div>
+        <Button
+          type="submit"
+          className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-300 flex items-center justify-center"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Loading...' : 'Get Meanings'}
+          <Search className="ml-2" />
+        </Button>
       </form>
+      {error && (
+        <Alert variant="destructive" className="mt-4">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
       {meanings.length > 0 && (
         <div className="mt-8">
+          <h2 className="text-2xl font-semibold mb-4 text-red-600">Definitions:</h2>
           <ul className="space-y-2">
             {meanings.map((item, index) => (
-              <li key={index} className="text-gray-800">
-                <strong className='uppercase text-[#5f2134]'>{item.word} :</strong> {item.meaning}
+              <li key={index} className="text-red-800">
+                <p className="text-gray-900 bg-yellow-50 p-2 font-extrabold uppercase">{item.word}:</p> {item.meaning}
               </li>
             ))}
           </ul>
         </div>
       )}
     </div>
-  </main>
-  
   );
-}
+};
+
+export default AdvancedDictionary;
